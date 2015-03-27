@@ -36,9 +36,9 @@ if __name__ == '__main__':
     while i < 100:
 	print "Generating reads..."
         return_code = call("art_illumina -sam -i data/hs_alt_CHM1_1.1_chr22.fa -l 25 -ss HS25 -f 10 -o data/output_dat", shell=True)
-        if return_code != 0:
-            print "Error occurred generating the reads"
-            continue
+#        if return_code != 0:
+#            print "Error occurred generating the reads"
+#            continue
         print "Reads generated successfully"
         removeFiles()
         result = extractReads()
