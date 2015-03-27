@@ -35,7 +35,7 @@ def extractReads():
 
 if __name__ == '__main__':
     i = 0
-    while i < 100:
+    while i < 10:
 	print "Generating reads..."
         return_code = call("art_illumina -sam -i data/hs_alt_CHM1_1.1_chr22.fa -l 25 -ss HS25 -f 10 -o data/output_dat", shell=True)
 #        if return_code != 0:
