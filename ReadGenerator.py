@@ -14,10 +14,11 @@ def removeFiles():
         os.remove("data/output_dat.fq")
         
 def extractReads():
+    print "Extracting data..."
     if not isfile("data/output_dat.sam"):
         return False
     filename = datetime.now()
-    with open("output_dat.sam") as input_file:
+    with open("data/output_dat.sam") as input_file:
         with open("data/" + str(filename), "a") as output_file:
             for line in input_file:
                 #skip header files
@@ -28,8 +29,9 @@ def extractReads():
                     continue
                 position = line_components[3]
                 read = line_components[9]
-                output_file.write(position + "    " + read)
+                output_file.write(position + "    " + read + "\n")
     os.remove("data/output_dat.sam")
+    return True
 
 if __name__ == '__main__':
     i = 0
