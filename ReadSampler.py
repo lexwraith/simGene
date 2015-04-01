@@ -32,14 +32,12 @@ def main(ff):
     # Discard partial lines
     p.readline()
     
-    # Code goes here
-    g = []
-    t = ""
     # Parternal DNA
     g = [p.readline() for _ in range(int(ff * READS)/2)]
     # Maternal DNA
     while(len(g) < READS):
         g.append(m.readline())
+    # Cleanup
     g = [tuple(l[0:-2].split()) for l in g]
 
 if __name__ == "__main__":
