@@ -7,6 +7,7 @@ from argparse import ArgumentParser
 from numpy.random import normal as normdist
 import random
 import cProfile
+import config
 
 #Constants
 FFMEAN = .35
@@ -17,8 +18,8 @@ LENCHR = 53000000
 parser = ArgumentParser()
 
 def loadGenomes():
-    one = open("data/reads/4-1-14-32-42", "r")
-    two = open("data/reads/4-1-14-34-48", "r")
+    one = open("%sreads/4-1-14-32-42" % config.OUTPUTPATH, "r")
+    two = open("%sreads/4-1-14-34-48" % config.OUTPUTPATH, "r")
     return one,two
 
 def loadArray(genomeFile):
