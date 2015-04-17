@@ -17,7 +17,7 @@ Read Generator - Creates a new random bucket of reads with arguments <genome seq
 
 Read Sampler - From a read bucket (produced by Read Generator) create ANOTHER read bucket that represents
     a real set of reads in a real-world setting. It needs to generate several random variables:
-    1. Fetal Fraction (~N(.35,.1))
+    1. Fetal Fraction (~N(.123,.035))
     2. Some form of Trisomy22 (partial, long deletion, etc.)
     3. The actual reads that are sampled from the output of Read Generator
     4. Average coverage (multiply our reads in a given window by this constant to get average)
