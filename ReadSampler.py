@@ -30,6 +30,21 @@ def loadGenomes():
 def loadArray(genomeFile):
     pass
 
+def del22q11():
+    pass
+
+def dup22q11():
+    pass
+
+def complete():
+    pass
+
+def del22q13():
+    pass
+
+def longd():
+    pass
+
 def main(ff, type):
     m,p = loadGenomes()
     maxp = int(sum(1 for line in p) - ff * READS)
@@ -45,6 +60,17 @@ def main(ff, type):
         g.append(m.readline())
     # Cleanup
     g = [tuple(l[0:-2].split()) for l in g]
+    
+    if type == "22q11del":
+        del22q11(g)
+    elif type == "22q11dup":
+        dup22q11(g)
+    elif type == "22q13del":
+        del22q13(g)
+    elif type == "complete":
+        complete(g)
+    elif type == "longd":
+        longd(g)
 
 if __name__ == "__main__":
     args = parser.parse_args()
