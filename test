@@ -1,0 +1,3 @@
+art_illumina -ef -sam -i data/1.fa -l 25 -ss HS25 -f 1 -o data/1.deleteme &
+art_illumina -ef -sam -i data/2.fa -l 25 -ss HS25 -f 1 -o data/2.deleteme &
+art_illumina -ef -sam -i data/3.fa -l 25 -ss HS25 -f 1 -o data/3.deleteme &

@@ -52,8 +52,5 @@ docs/_build/
 
 # PyBuilder
 target/
+data/
 
-# My stuff
-.gitignore
-ComputationalGenomics*
-connect
