@@ -20,6 +20,12 @@ path = {}
 path['REF'] = REFPATH
 path['ALT'] = ALTPATH
 
+def getLoc(pos):
+    pos = int(pos)
+    for elem in LOC:
+        if elem[0] < pos < elem[1]:
+            return elem[2]
+
 def removeFiles(target):
     try:
         for ftype in [".aln", ".fq", ".sam"]:
@@ -44,7 +50,7 @@ def extractReads(target):
                     continue
                 position = line_components[3]
                 read = line_components[9]
-                output_file.write(position + "    " + read + "\n")
+                output_file.write("%s,%s,%s\n" % (position,read,getLoc(position)))
     os.remove("%s%s_errFree.sam" % (OUTPUTPATH, target))
     return True
 
