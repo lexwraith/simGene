@@ -1,21 +1,26 @@
 #!/usr/bin/python
 # This program creates a set of maternal plasma reads
-# Presumptions: sqrt(ff) ~ norm(.35,.1)
+# Presumptions: sqrt(ff) ~ norm(.123,.035)
 # sqrt(ff)**2 * 100 = ff
 
 from argparse import ArgumentParser
 from numpy.random import normal as normdist
 from config import *
+
 import random
 import cProfile
 
 #Constants
-FFMEAN = .35
-FFSTD = .1
 READS = 1000000
 LENCHR = 53000000
 
 parser = ArgumentParser()
+parser.add_argument("-t",
+    metavar="Type",
+    type=str,
+    choices=["22q11del", "22q11dup", "22q13del", "complete", "longd"],
+    default="complete",
+    help="Type of aneuploidy 22")
 
 def loadGenomes():
     one = open("%sreads/4-1-14-32-42" % OUTPUTPATH, "r")
@@ -25,7 +30,7 @@ def loadGenomes():
 def loadArray(genomeFile):
     pass
 
-def main(ff):
+def main(ff, type):
     m,p = loadGenomes()
     maxp = int(sum(1 for line in p) - ff * READS)
     p.seek(random.randint(0,maxp))
@@ -43,6 +48,6 @@ def main(ff):
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    main(normdist(FFMEAN,FFSTD)**2)
+    main(normdist(FFMEAN,FFSTD)**2, args.t)
     #cProfile.run('main(normdist(FFMEAN,FFSTD)**2 * 100)')
 
