@@ -24,8 +24,8 @@ parser.add_argument("-t",
     help="Type of aneuploidy 22")
 
 def loadGenomes():
-    one = open("%sreads/4-1-14-32-42" % OUTPUTPATH, "r")
-    two = open("%sreads/4-1-14-34-48" % OUTPUTPATH, "r")
+    one = open("%sreads/4-17-21-3-38" % OUTPUTPATH, "r")
+    two = open("%sreads/4-17-21-5-35" % OUTPUTPATH, "r")
     return one,two
 
 def loadArray(genomeFile):
@@ -35,19 +35,28 @@ def del22q11(g):
     pass
 
 def dup22q11(g):
-    x = filter(lambda x: x[2] == 'q22.11', g)
+    print "coverage:", COVERAGE
+    print "length of g:",len(g)
+    x = filter(lambda x: 'q11' in x[2], g)
+    print "number to be duplicated:", len(x)
     y = []
-    for _ in range(COVERAGE * 2):
+    for _ in range(COVERAGE * 2 - 1):#do not extend an extra time - want exactly n*COVERAGE*2 reads
         y.extend(x)
     x.extend(y)
+
+    print "length of x:", len(x)
     
-    z = filter(lambda z: z[2] != 'q22.11', g)
+    z = filter(lambda z: 'q11' in z[2], g)
     y = []
     for _ in range(COVERAGE):
         y.extend(z)
     z.extend(y)
     
+    print "len of z:", len(z)
+
     z.extend(x)
+
+    print "total len:", len(z)
 
 def complete(g):
     pass
@@ -59,6 +68,15 @@ def longd(g):
     pass
 
 def noTrisomy(g):
+    pass
+
+def complete(g):
+    pass
+
+def del22q13(g):
+    pass
+
+def longd(g):
     pass
 
 def main(ff, type):
@@ -75,7 +93,7 @@ def main(ff, type):
     while(len(g) < READS):
         g.append(m.readline())
     # Cleanup
-    g = [tuple(l[0:-2].split()) for l in g]
+    g = [tuple(l[0:-2].split(",")) for l in g]
     
     if type == "22q11del":
         del22q11(g)
