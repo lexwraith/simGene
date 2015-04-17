@@ -13,6 +13,7 @@ import cProfile
 #Constants
 READS = 1000000
 LENCHR = 53000000
+COVERAGE = random.randint(1, 7)
 
 parser = ArgumentParser()
 parser.add_argument("-t",
@@ -30,19 +31,34 @@ def loadGenomes():
 def loadArray(genomeFile):
     pass
 
-def del22q11():
+def del22q11(g):
     pass
 
-def dup22q11():
+def dup22q11(g):
+    x = filter(lambda x: x[2] == 'q22.11', g)
+    y = []
+    for _ in range(COVERAGE * 2):
+        y.extend(x)
+    x.extend(y)
+    
+    z = filter(lambda z: z[2] != 'q22.11', g)
+    y = []
+    for _ in range(COVERAGE):
+        y.extend(z)
+    z.extend(y)
+    
+    z.extend(x)
+
+def complete(g):
     pass
 
-def complete():
+def del22q13(g):
     pass
 
-def del22q13():
+def longd(g):
     pass
 
-def longd():
+def noTrisomy(g):
     pass
 
 def main(ff, type):
@@ -71,6 +87,8 @@ def main(ff, type):
         complete(g)
     elif type == "longd":
         longd(g)
+    else:
+        noTrisomy(g)
 
 if __name__ == "__main__":
     args = parser.parse_args()
