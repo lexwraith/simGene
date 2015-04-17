@@ -5,6 +5,7 @@
 
 from argparse import ArgumentParser
 from numpy.random import normal as normdist
+from config import *
 import random
 import cProfile
 
@@ -17,8 +18,8 @@ LENCHR = 53000000
 parser = ArgumentParser()
 
 def loadGenomes():
-    one = open("data/reads/4-1-14-32-42", "r")
-    two = open("data/reads/4-1-14-34-48", "r")
+    one = open("%sreads/4-1-14-32-42" % OUTPUTPATH, "r")
+    two = open("%sreads/4-1-14-34-48" % OUTPUTPATH, "r")
     return one,two
 
 def loadArray(genomeFile):

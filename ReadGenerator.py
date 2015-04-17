@@ -6,32 +6,33 @@ Created on Mar 27, 2015
 from subprocess import call
 from os.path import isfile
 from multiprocessing import Process
+
 import os
 from datetime import datetime as dt
 from time import sleep
 
+from config import *
+
 #Constants
-MAXNUMPROCS = 10
 path = {}
-path['REF'] = 'REF.fa'
-path['ALT'] = 'ALT.fa'
+path['REF'] = REFPATH
+path['ALT'] = ALTPATH
 
 def removeFiles(target):
-    if isfile("data/%s.aln" % target):
-        os.remove("data/%s.aln" % target)
-    if isfile("data/%s.fq" % target):
-        os.remove("data/%s.fq" % target)
-    if isfile("data/%s.sam" % target):
-        os.remove("data/%s.sam" % target)
+    try:
+        for ftype in [".aln", ".fq", ".sam"]:
+            os.remove("%s%s%s" % (OUTPUTPATH, target, ftype))
+    except:
+        pass
 
 def extractReads(target):
     print "Extracting data..."
-    if not isfile("data/" + target + "_errFree.sam"):
+    if not isfile("%s%s_errFree.sam" % (OUTPUTPATH, target)):
         print("Extraction target not found: %s" % target)
         return False
 
-    with open("data/" + target + "_errFree.sam") as input_file:
-        with open("data/reads/" + target, "a") as output_file:
+    with open("%s%s_errFree.sam" % (OUTPUTPATH, target)) as input_file:
+        with open("%s/reads/%s" % (OUTPUTPATH, target), "a") as output_file:
             for line in input_file:
                 #skip header files
                 if line[0] == "@":
@@ -42,24 +43,26 @@ def extractReads(target):
                 position = line_components[3]
                 read = line_components[9]
                 output_file.write(position + "    " + read + "\n")
-    os.remove("data/%s_errFree.sam" % target)
+    os.remove("%s%s_errFree.sam" % (OUTPUTPATH, target))
     return True
 
 def main(seq, cov):
-    # Sets filename to Month-Day-Hour-Minute-Seconds name
+    # Sets a temp filename to Month-Day-Hour-Minute-Seconds name
     filename = (str(x) for x in dt.now().timetuple()[1:6])
     filename = reduce(lambda x,y: x + "-" +  y, filename)
 
     # For some reason can't have multiple reads on same file
+    # So we temporarily copy our target sequence to a time stamp
     indcopy = filename + ".cp"
-    print("Copying %s to %s" % (path[seq], indcopy))
-    call("cp data/%s data/%s" % (path[seq], indcopy), shell=True)
+    print("Copying %s to %s%s" % (path[seq], OUTPUTPATH, indcopy))
+    call("cp %s %s%s" % (path[seq], OUTPUTPATH, indcopy), shell=True)
 
     print "Generating reads..."
-    toCall = "art_illumina -ef -sam -i data/%s -l 25 -ss HS25 -f %s -o data/%s" % (indcopy, cov, filename)
+    toCall = "art_illumina -ef -sam -i %s%s -l 25 -ss HS25 -f %s -o %s%s" % (OUTPUTPATH, 
+            indcopy, cov, OUTPUTPATH, filename)
     print(toCall)
     return_code = call(toCall, shell=True)
-    os.remove("data/%s" % indcopy)
+    os.remove("%s%s" % (OUTPUTPATH, indcopy))
 
     if return_code != 0:
         print("Error occurred generating reads for %s" % filename)
