@@ -126,6 +126,11 @@ def main(ff, type, parent):
         g.append(tuple(m.readline()[0:-2].split(",")))
     # Cleanup
     #g = [tuple(l[0:-2].split(",")) for l in g]
+    print "Writing to output file " + type + "_" + parent
+    with open(OUTPUTPATH + type + "_" + parent, "w") as f:
+        for entry in g:
+            f.write("%s\n" % entry)
+    print "Done."
 
 
 if __name__ == "__main__":
