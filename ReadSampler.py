@@ -129,7 +129,7 @@ def main(ff, type, parent):
     print "Writing to output file " + type + "_" + parent
     with open(OUTPUTPATH + type + "_" + parent, "w") as f:
         for entry in g:
-            f.write("%s\n" % entry)
+            f.write("%s,%s,%s\n" % (entry[0], entry[1], entry[2]))
     print "Done."
 
 
