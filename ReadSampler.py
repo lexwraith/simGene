@@ -190,6 +190,7 @@ def main(ff, type, parent):
     with open(OUTPUTPATH + type + "_" + parent, "w") as f:
         for entry in g:
             f.write(entry + "\n")
+            f.write("%s,%s,%s\n" % (entry[0], entry[1], entry[2]))
     print "Done."
 
 
