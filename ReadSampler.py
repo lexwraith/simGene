@@ -24,8 +24,8 @@ parser.add_argument("-t",
     help="Type of aneuploidy 22")
 
 def loadGenomes():
-    one = open("%sreads/4-1-14-32-42" % OUTPUTPATH, "r")
-    two = open("%sreads/4-1-14-34-48" % OUTPUTPATH, "r")
+    one = open("%sreads/4-17-20-27-48" % OUTPUTPATH, "r")
+    two = open("%sreads/4-17-20-29-58" % OUTPUTPATH, "r")
     return one,two
 
 def loadArray(genomeFile):
