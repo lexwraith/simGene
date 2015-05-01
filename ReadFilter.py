@@ -4,6 +4,8 @@ Created on May 1, 2015
 
 import argparse
 from config import *
+from os.path import isfile
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("i", 
@@ -23,8 +25,13 @@ def getLoc(pos):
             return elem[2]
 
 def main(input_file, output_file):
-    with open(input_file, "r") as input:
-        with open(output_file, "w") as output:
+    print "Extracting data..."
+    if not isfile("%s%s" % (OUTPUTPATH, input_file)):
+        print("Extraction target not found: %s" % input_file)
+        return False
+    
+    with open("%s%s" % (OUTPUTPATH, input_file), "r") as input:
+        with open("%s/reads/%s" % (OUTPUTPATH, output_file), "w") as output:
             for line in input:
                 #skip header files
                 if line[0] == "@":
@@ -37,7 +44,7 @@ def main(input_file, output_file):
                     continue
                 position = line_components[3]
                 read = line_components[9]
-                output_file.write("%s,%s,%s\n" % (position,read,getLoc(position)))
+                output.write("%s,%s,%s\n" % (position,read,getLoc(position)))
 
 if __name__ == '__main__':
     args = parser.parse_args()
