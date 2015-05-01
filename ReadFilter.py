@@ -3,8 +3,10 @@ Created on May 1, 2015
 '''
 
 import argparse
-from config import *
+import os
 from os.path import isfile
+
+from config import *
 
 
 parser = argparse.ArgumentParser()
@@ -45,6 +47,8 @@ def main(input_file, output_file):
                 position = line_components[3]
                 read = line_components[9]
                 output.write("%s,%s,%s\n" % (position,read,getLoc(position)))
+                
+    os.remove("%s%s" % (OUTPUTPATH, input_file))
 
 if __name__ == '__main__':
     args = parser.parse_args()
