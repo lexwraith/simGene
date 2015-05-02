@@ -10,7 +10,6 @@ from operator import itemgetter
 import random
 
 import matplotlib.pyplot as plt
-
 from numpy.random import normal as normdist
 from scipy.stats import poisson
 
@@ -39,22 +38,26 @@ parser.add_argument("-p",
     help="Maternal or Paternal")
 
 def loadGenomes():
-    one = open("%sreads/mother_filtered" % OUTPUTPATH, "r")
-    two = open("%sreads/child_filtered" % OUTPUTPATH, "r")
-    return one,two
+    one = open("%sreads/mother" % OUTPUTPATH, "r")
+    two = open("%sreads/child" % OUTPUTPATH, "r")
+    three = open("%sreads/father" % OUTPUTPATH, "r")
+    return one,two, three
 
 '''
 Creates fetal data for 22q11 deletion.
-Final fetal data will include all of no_del, and all of to_del besides anything in 22q11
+Final fetal data will include all of the data called to the one parent, and only non-22q11 from the other
 '''
-def del22q11(to_del):
+def del22q11(to_del, parent):
     print "Simulating deleted 22q11..."
     
     # Add in the reads not associated with 22q11, from 1st parent
     z_normal = filter(lambda z: 'q11' not in z[2], to_del)
-    
+    # Add in the reads on 22q11, from the other parent
+    z_q11 = filter(lambda z: 'q11' in z[2] and z[3] != parent and z[3] != "-", to_del)
+        
     z = []
     z.extend(z_normal)
+    z.extend(z_q11)
     
     
     '''
@@ -75,17 +78,20 @@ def del22q11(to_del):
 
 '''
 Creates fetal data for 22q11 duplication
-Final fetal data includes all of no_dup, all of to_dup, with everything in to_dup that is 22q11 twice
+Final data includes all non-22q11, 22q11 from one parent, and 2x 22q11 from the other
 '''
-def dup22q11(to_dup):
+def dup22q11(to_dup, parent):
     print "Simulating duplicated 22q11..."
     
-    x = filter(lambda x: 'q11' in x[2], to_dup)
+    x = filter(lambda x: 'q11' in x[2] and x[3] != parent and x[3] != "-", to_dup)
+    x_dup = filter(lambda x: 'q11' in x[2] and x[3] == parent or x[3] == "-", to_dup)
+    
     y = filter(lambda y: 'q11' not in x[2], to_dup)
     
     z = []
     z.extend(x)
-    z.extend(x)
+    z.extend(x_dup)
+    z.extend(x_dup)
     z.extend(y)
     
     '''
@@ -113,12 +119,19 @@ def dup22q11(to_dup):
     print "Done."
     return z
 
-def complete(to_dup):
+'''
+Creates fetal data for a complete trisomy
+Final data is all reads for one parent, and 2x reads for the other
+'''
+def complete(to_dup, parent):
     print "Simulating complete duplicate"
-    y = copy.deepcopy(to_dup)
+    x = filter(lambda x: x[3] != parent and x[3] != "-", to_dup)
+    x_dup = filter(lambda x: x[3] == parent or x[3] == "-", to_dup)
+    
     z = []
-    z.extend(y)
-    z.extend(y)
+    z.extend(x)
+    z.extend(x_dup)
+    z.extend(x_dup)
     
     '''
     z = copy.deepcopy(to_dup)
@@ -136,13 +149,21 @@ def complete(to_dup):
     print "Done."
     return z
 
-def del22q13(to_del):
+'''
+Creates fetal data for a deleted 22q13
+Final data is all reads from one parent, and all non-22q13 reads from the other
+'''
+def del22q13(to_del, parent):
     print "Simulating deleted 22q13..."
     
-    z_normal = filter(lambda z: 'q11' not in z[2], to_del)
-    
+    # Add in the reads not associated with 22q11, from 1st parent
+    z_normal = filter(lambda z: 'q13' not in z[2], to_del)
+    # Add in the reads on 22q11, from the other parent
+    z_q11 = filter(lambda z: 'q13' in z[2] and z[3] != parent and z[3] != "-", to_del)
+        
     z = []
     z.extend(z_normal)
+    z.extend(z_q11)
     
     
     '''
@@ -161,9 +182,14 @@ def del22q13(to_del):
     print "Done."
     return z
 
-def longd(to_del):
+'''
+Creates fetal data for an entire missing chromosome from one parent
+Final data includes all reads from one parent, and none from the other
+'''
+def longd(to_del, parent):
     print "Simulating complete deletion"
-    z = []
+    z = filter(lambda x: x[3] != parent and x[3] != "-", to_del)
+
     '''
     # Add in all reads from the other parent
     for _ in range(COVERAGE):
@@ -172,6 +198,10 @@ def longd(to_del):
     print "Done."
     return z
 
+'''
+Returns fetal data for no aneuploidy
+Final data includes all reads from both parents
+'''
 def noAneuploidy(fetal):
     print "Simulating no aneuploidy..."
     print "Done."
@@ -195,22 +225,13 @@ Put into buckets of length 10,000 each
 def getSequence(data):
     print len(data)
     print "Generating observed sequence..."
-    #child = open("%sreads/child_filtered" % OUTPUTPATH, "r")
-    num_reads = len(data)#len(list(child))
+    num_reads = len(data)
     expected_reads = num_reads*READ_LEN*BUCKET_SIZE/CHR_LEN
     
-#    dist = poisson(expected_reads)
     low, high = poisson.interval(0.333, expected_reads)
-    print low, high, expected_reads
-    #pois = poisson(expected_reads)
-    #low = pois*0.33
-    #high = pois*0.667
-
-#    low = expected_reads*0.8
-#    high = expected_reads*1.2
+    
     coverage = {}
     for read in data:
-#        read_info = read.split(',')
         pos = int(read[0])
         read_len = len(read[1])
         for i in range(read_len):
@@ -219,24 +240,17 @@ def getSequence(data):
     key_nums = {}
     for key in coverage:
         if coverage[key] < low:
-            #print coverage[key]
             coverage[key] = "L"
             key_nums["L"] = key_nums.get("L", 0) + 1
         elif coverage[key] < high:
             coverage[key] = "N"
             key_nums["N"] = key_nums.get("N", 0) + 1
         else:
-            #print coverage[key]
             key_nums["H"] = key_nums.get("H", 0) + 1
             coverage[key] = "H"
-            
-    print "to be low:", low
-    print key_nums
 
     observed_seq = []
-    #go through each dictionary entry in order
-    #for i in range(max(coverage.keys())):
-    #    observed_seq.append(coverage[i])
+
     for key in sorted(coverage):
         observed_seq.append(coverage[key])
     print "Done."
@@ -264,23 +278,86 @@ def displayCoverage(reads, type):
     plt.xlabel("Read position")
     plt.ylabel("Coverage")
     plt.show()
+    
+def hammingDist(seq1, seq2):
+    seq1_len = len(seq1)
+    seq2_len = len(seq2)
+    # Make them the same distances
+    if seq2_len > seq1_len:
+        seq2 = seq2[:seq1_len]
+    elif seq1_len > seq2_len:
+        seq1 = seq1[:seq2_len]
+    # Compute hamming distance
+    dist = sum(ch1 != ch2 for ch1, ch2 in zip(seq1, seq2))
+    return dist
+    
+def getDist(pos, seq, ref):
+    pos = int(pos)
+    low = 0
+    high = len(ref) - 1
+    while low <= high:
+        mid = (low + high) / 2
+        if int(ref[mid][0]) > pos:
+            high = mid - 1
+        elif int(ref[mid][0]) < pos:
+            low = mid + 1
+        else:
+            # Match found - Compare the sequences
+            dist = hammingDist(ref[mid][1], seq)
+            break
+    # A direct positional match has not been found
+    if low > high:
+        best_dist = float("inf")
+        ref_seq = ref[mid][1]
+        
+        diff = pos - int(ref[mid][0])
+        if diff <= len(seq):
+            seq_cpy = seq[:-diff]
+            ref_cpy = ref_seq[diff:]
+            dist = hammingDist(seq_cpy, ref_cpy)
+        diff = int(ref[mid][0]) - pos
+        if diff <= len(ref_seq):
+            seq_cpy = seq[diff:]
+            ref_cpy = ref_seq[:diff]
+            dist2 = hammingDist(seq_cpy, ref_cpy)
+    return min(dist, dist2)
+    
+def callReads(reads, m, p):
+    for read in reads:
+        pos = read[0]
+        seq = read[1]
+        dist_m = getDist(pos, seq, m)
+        dist_p = getDist(pos, seq, p)
+        if dist_m > dist_p:
+            call = "p"
+        elif dist_p > dist_m:
+            call = "m"
+        else:
+            call = "-"
+        read = read + (call,)
+        
+    return reads
 
 def main(ff, type, parent, display):
-    m,f = loadGenomes()
+    m,f, p = loadGenomes()
     fetal = list(f)
     fetal = [tuple(l[0:-2].split(",")) for l in fetal]
+    m = [tuple(l[0:-2].split(",")) for l in m]
+    p = [tuple(l[0:-2].split(",")) for l in p]
+    
+    fetal = callReads(fetal, m, p)
     
     # Generate the aneuploidy for the entire fetus
     if type == "22q11del":
-        fetal = del22q11(fetal)
+        fetal = del22q11(fetal, parent)
     elif type == "22q11dup":
-        fetal = dup22q11(fetal)
+        fetal = dup22q11(fetal, parent)
     elif type == "22q13del":
-        fetal = del22q13(fetal)
+        fetal = del22q13(fetal, parent)
     elif type == "complete":
-        fetal = complete(fetal)
+        fetal = complete(fetal, parent)
     elif type == "longd":
-        fetal = longd(fetal)
+        fetal = longd(fetal, parent)
     elif type == "none":
         fetal = noAneuploidy(fetal)
     
@@ -290,8 +367,10 @@ def main(ff, type, parent, display):
     # Fill the rest of the plasma reads
     g = copy.deepcopy(fetal)
     # Maternal DNA
+    
+    #TODO make it mother
     while(len(g) < READS):
-        g.append(tuple(m.readline()[0:-2].split(",")))
+        g.append(tuple(m.readline()[0:-2].split(",")) + ("m",))
     
     #sort the data on read position
     sorted(g, key=itemgetter(0))

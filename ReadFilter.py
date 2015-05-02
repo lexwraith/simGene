@@ -8,7 +8,6 @@ from os.path import isfile
 
 from config import *
 
-
 parser = argparse.ArgumentParser()
 parser.add_argument("i", 
         metavar="Input", 
