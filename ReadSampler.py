@@ -12,6 +12,7 @@ import random
 import matplotlib.pyplot as plt
 
 from numpy.random import normal as normdist
+from scipy.stats import poisson
 
 from config import *
 
@@ -19,7 +20,7 @@ from config import *
 #Constants
 READS = 1000000
 LENCHR = 53000000
-BUCKET_SIZE = 10000
+BUCKET_SIZE = 1000
 COVERAGE = random.randint(1, 7)
 
 parser = ArgumentParser()
@@ -29,13 +30,13 @@ parser.add_argument("-t",
     choices=["none", "22q11del", "22q11dup", "22q13del", "complete", "longd"],
     default="none",
     help="Type of aneuploidy 22")
-parser.add_argument("-d", help="display read coverage in a graph")
-#parser.add_argument("-p",
-#    metavar="Parent",
-#    type=str,
-#    choices=["p", "m"],
-#    default="p",
-#    help="Maternal or Paternal")
+parser.add_argument("-d", help="display read coverage in a graph", action='store_true')
+parser.add_argument("-p",
+    metavar="Parent",
+    type=str,
+    choices=["p", "m"],
+    default="p",
+    help="Maternal or Paternal")
 
 def loadGenomes():
     one = open("%sreads/mother_filtered" % OUTPUTPATH, "r")
@@ -192,34 +193,57 @@ Given plasma data, creates an observed sequence. For each position, sees if the 
 Put into buckets of length 10,000 each
 '''
 def getSequence(data):
-    mother = open("%sreads/mother_filtered" % OUTPUTPATH, "r")
-    num_reads = len(mother.read())
-    expected_reads = num_reads*COVERAGE/CHR_LEN
-    low = expected_reads*0.8
-    high = expected_reads*1.2
+    print len(data)
+    print "Generating observed sequence..."
+    #child = open("%sreads/child_filtered" % OUTPUTPATH, "r")
+    num_reads = len(data)#len(list(child))
+    expected_reads = num_reads*READ_LEN*BUCKET_SIZE/CHR_LEN
+    
+#    dist = poisson(expected_reads)
+    low, high = poisson.interval(0.333, expected_reads)
+    print low, high, expected_reads
+    #pois = poisson(expected_reads)
+    #low = pois*0.33
+    #high = pois*0.667
+
+#    low = expected_reads*0.8
+#    high = expected_reads*1.2
     coverage = {}
     for read in data:
-        read_info = read.split(',')
-        pos = int(read_info[0])
-        read_len = len(read_info[1])
+#        read_info = read.split(',')
+        pos = int(read[0])
+        read_len = len(read[1])
         for i in range(read_len):
             bucket = (pos + i)/BUCKET_SIZE
             coverage[bucket] = coverage.get(bucket, 0) + 1
+    key_nums = {}
     for key in coverage:
         if coverage[key] < low:
+            #print coverage[key]
             coverage[key] = "L"
+            key_nums["L"] = key_nums.get("L", 0) + 1
         elif coverage[key] < high:
             coverage[key] = "N"
+            key_nums["N"] = key_nums.get("N", 0) + 1
         else:
+            #print coverage[key]
+            key_nums["H"] = key_nums.get("H", 0) + 1
             coverage[key] = "H"
             
+    print "to be low:", low
+    print key_nums
+
     observed_seq = []
     #go through each dictionary entry in order
-    for i in range(max(coverage.keys())):
-        observed_seq.append(coverage[i])
+    #for i in range(max(coverage.keys())):
+    #    observed_seq.append(coverage[i])
+    for key in sorted(coverage):
+        observed_seq.append(coverage[key])
+    print "Done."
     return observed_seq
 
 def displayCoverage(reads, type):
+    print "Displaying coverage..."
     if type == "22q11del":
         desc = "Deletion on 22q11"
     elif type == "22q11dup":
@@ -243,7 +267,7 @@ def displayCoverage(reads, type):
 
 def main(ff, type, parent, display):
     m,f = loadGenomes()
-    fetal = f.read()
+    fetal = list(f)
     fetal = [tuple(l[0:-2].split(",")) for l in fetal]
     
     # Generate the aneuploidy for the entire fetus
@@ -261,7 +285,7 @@ def main(ff, type, parent, display):
         fetal = noAneuploidy(fetal)
     
     # Get the fetus samples that will show up in the plasma
-    fetal = random.sample(fetal, READS*ff)
+    fetal = random.sample(fetal, int(READS*ff))
     
     # Fill the rest of the plasma reads
     g = copy.deepcopy(fetal)
@@ -342,7 +366,7 @@ def main(ff, type, parent, display):
 
 
 if __name__ == "__main__":
-    print "Coverage:", COVERAGE
+    #print "Coverage:", COVERAGE
     args = parser.parse_args()
     main(normdist(FFMEAN,FFSTD)**2, args.t, args.p, args.d)
     #cProfile.run('main(normdist(FFMEAN,FFSTD)**2 * 100)')
