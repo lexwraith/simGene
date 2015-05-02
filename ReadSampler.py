@@ -14,6 +14,7 @@ from numpy.random import normal as normdist
 from scipy.stats import poisson
 
 from config import *
+from _collections import defaultdict
 
 
 #Constants
@@ -58,20 +59,6 @@ def del22q11(to_del, parent):
     z = []
     z.extend(z_normal)
     z.extend(z_q11)
-    
-    
-    '''
-    # Add in the reads not associated with 22q11, from 1st parent
-    z = filter(lambda z: 'q11' not in z[2], to_del)
-    y = []
-    for _ in range(COVERAGE - 1):
-        y.extend(z)
-    z.extend(y)
-    
-    # Add in all reads from the other parent
-    for _ in range(COVERAGE):
-        z.extend(no_del)
-    '''
         
     print "Done."
     return z
@@ -85,7 +72,6 @@ def dup22q11(to_dup, parent):
     
     x = filter(lambda x: 'q11' in x[2] and x[3] != parent and x[3] != "-", to_dup)
     x_dup = filter(lambda x: 'q11' in x[2] and x[3] == parent or x[3] == "-", to_dup)
-    
     y = filter(lambda y: 'q11' not in x[2], to_dup)
     
     z = []
@@ -93,28 +79,6 @@ def dup22q11(to_dup, parent):
     z.extend(x_dup)
     z.extend(x_dup)
     z.extend(y)
-    
-    '''
-    # Get only reads on 22q11
-    x = filter(lambda x: 'q11' in x[2], to_dup)
-    y = []
-    # Duplicate the reads, take care of coverage, from 1st parent
-    for _ in range(COVERAGE * 2 - 1):# Do not extend an extra time - want exactly n*COVERAGE*2 reads
-        y.extend(x)
-    x.extend(y)
-
-    # Add in the reads not associated with 22q11, from 1st parent
-    z = filter(lambda z: 'q11' not in z[2], to_dup)
-    y = []
-    for _ in range(COVERAGE - 1):
-        y.extend(z)
-    z.extend(y)
-    z.extend(x)
-    
-    # Add in all reads from the other parent
-    for _ in range(COVERAGE):
-        z.extend(no_dup)
-    '''
         
     print "Done."
     return z
@@ -133,19 +97,6 @@ def complete(to_dup, parent):
     z.extend(x_dup)
     z.extend(x_dup)
     
-    '''
-    z = copy.deepcopy(to_dup)
-    y = []
-    # Duplicate the reads, take care of coverage, from 1st parent
-    for _ in range(COVERAGE * 2 - 1):# Do not extend an extra time - want exactly n*COVERAGE*2 reads
-        y.extend(to_dup)
-    z.extend(y)
-    
-    # Add in all reads from the other parent
-    for _ in range(COVERAGE):
-        z.extend(no_dup)
-        
-    '''
     print "Done."
     return z
 
@@ -164,21 +115,7 @@ def del22q13(to_del, parent):
     z = []
     z.extend(z_normal)
     z.extend(z_q11)
-    
-    
-    '''
-    # Add in the reads not associated with 22q11, from 1st parent
-    z = filter(lambda z: 'q13' not in z[2], to_del)
-    y = []
-    for _ in range(COVERAGE - 1):
-        y.extend(z)
-    z.extend(y)
-    
-    # Add in all reads from the other parent
-    for _ in range(COVERAGE):
-        z.extend(no_del)
-        
-    '''
+
     print "Done."
     return z
 
@@ -189,12 +126,6 @@ Final data includes all reads from one parent, and none from the other
 def longd(to_del, parent):
     print "Simulating complete deletion"
     z = filter(lambda x: x[3] != parent and x[3] != "-", to_del)
-
-    '''
-    # Add in all reads from the other parent
-    for _ in range(COVERAGE):
-        z.extend(no_del)
-    '''
     print "Done."
     return z
 
@@ -206,53 +137,59 @@ def noAneuploidy(fetal):
     print "Simulating no aneuploidy..."
     print "Done."
     return fetal
-    '''
-    z = copy.deepcopy(maternal)
-    z.extend(paternal)
-    y = []
-    for _ in range(COVERAGE - 1):
-        y.extend(z)
-    z.extend(y)
-    
-    print "Done."
-    return z
-    '''
 
 '''
 Given plasma data, creates an observed sequence. For each position, sees if the number of reads is greater or less than the expected amount
 Put into buckets of length 10,000 each
 '''
-def getSequence(data):
-    print len(data)
+def getSequence(data, ff):
     print "Generating observed sequence..."
-    num_reads = len(data)
-    expected_reads = num_reads*READ_LEN*BUCKET_SIZE/CHR_LEN
     
-    low, high = poisson.interval(0.333, expected_reads)
+    num_reads_p = len(data)*ff/2 # Paternal reads are 1/2 of the fetus'
+    num_reads_m = len(data) - num_reads_p # Maternal reads are the rest
+    expected_coverage_p = num_reads_p * READ_LEN * BUCKET_SIZE / GEN_LEN
+    expected_coverage_m = num_reads_m * READ_LEN * BUCKET_SIZE / GEN_LEN
     
-    coverage = {}
+    # Generate two distributions, one for the father, and one for the mother
+    low_p, high_p = poisson.interval(0.333, expected_coverage_p)
+    low_m, high_m = poisson.interval(0.333, expected_coverage_m)
+    
+    # Count the number of times a read comes from m or p in each bucket
+    coverage_p = defaultdict(0)
+    coverage_m = defaultdict(0)
     for read in data:
         pos = int(read[0])
         read_len = len(read[1])
         for i in range(read_len):
             bucket = (pos + i)/BUCKET_SIZE
-            coverage[bucket] = coverage.get(bucket, 0) + 1
-    key_nums = {}
-    for key in coverage:
-        if coverage[key] < low:
-            coverage[key] = "L"
-            key_nums["L"] = key_nums.get("L", 0) + 1
-        elif coverage[key] < high:
-            coverage[key] = "N"
-            key_nums["N"] = key_nums.get("N", 0) + 1
+            if read[3] == "p":
+                coverage_p[bucket] += 1
+            else:
+                coverage_m[bucket] += 1
+        
+    # Decide if the number of reads represents a low, normal, or high distribution     
+    coverage = {}
+    for key in coverage_p:
+        if coverage_p[key] < low_p:
+            p_val = "L"
+        elif coverage_p[key] < high_p:
+            p_val = "N"
         else:
-            key_nums["H"] = key_nums.get("H", 0) + 1
-            coverage[key] = "H"
-
+            p_val = "H"
+        if coverage_m[key] < low_m:
+            m_val = "L"
+        elif coverage_m[key] < high_m:
+            m_val = "N"
+        else:
+            m_val = "H"
+        val = (p_val, m_val)
+        coverage[key] = val
+        
+    # Sort it by position
     observed_seq = []
-
     for key in sorted(coverage):
         observed_seq.append(coverage[key])
+        
     print "Done."
     return observed_seq
 
@@ -307,9 +244,7 @@ def getDist(pos, seq, ref):
             break
     # A direct positional match has not been found
     if low > high:
-        best_dist = float("inf")
-        ref_seq = ref[mid][1]
-        
+        ref_seq = ref[mid][1]        
         diff = pos - int(ref[mid][0])
         if diff <= len(seq):
             seq_cpy = seq[:-diff]
@@ -368,7 +303,6 @@ def main(ff, type, parent, display):
     g = copy.deepcopy(fetal)
     # Maternal DNA
     
-    #TODO make it mother
     while(len(g) < READS):
         g.append(tuple(m.readline()[0:-2].split(",")) + ("m",))
     
@@ -376,72 +310,16 @@ def main(ff, type, parent, display):
     sorted(g, key=itemgetter(0))
     
     # Get an observation sequence
-    seq = getSequence(g)
+    seq = getSequence(g, ff)
     
     print "Writing to output file " + type + "_" + parent
     with open(OUTPUTPATH + type + "_" + parent, "w") as f:
         for entry in seq:
-            f.write(entry + "\n")
+            f.write("%s,%s\n" % (entry[0], entry[1]))
     print "Done."
     
     if display:
         displayCoverage(g, type)
-        
-    '''
-    m,p = loadGenomes()
-    maxp = int(sum(1 for line in p) - ff * READS)
-    p.seek(random.randint(0,maxp))
-    
-    # Discard partial lines
-    p.readline()
-    
-    # Parternal DNA
-    paternal = [p.readline() for _ in range(int(ff * READS)/2)]
-    paternal = [tuple(l[0:-2].split(",")) for l in paternal]
-
-    # Maternal DNA in fetus
-    maternal = [m.readline() for _ in range(int(ff * READS)/2)]
-    maternal = [tuple(l[0:-2].split(",")) for l in maternal]
-
-    # Get reads for the fetus alone
-    if type == "22q11del" and parent == "p":
-        fetal = del22q11(paternal, maternal)
-    elif type == "22q11del" and parent == "m":
-        fetal = del22q11(maternal, paternal)
-    elif type == "22q11dup" and parent == "p":
-        fetal = dup22q11(paternal, maternal)
-    elif type == "22q11dup" and parent == "m":
-        fetal = dup22q11(maternal, paternal)
-    elif type == "22q13del" and parent == "p":
-        fetal = del22q13(paternal, maternal)
-    elif type == "22q13del" and parent == "m":
-        fetal = del22q13(maternal, paternal)
-    elif type == "complete" and parent == "p":
-        fetal = complete(paternal, maternal)
-    elif type == "complete" and parent == "m":
-        fetal = complete(maternal, paternal)
-    elif type == "longd" and parent == "p":
-        fetal = longd(paternal, maternal)
-    elif type == "longd" and parent == "m":
-        fetal = longd(maternal, paternal)
-    elif type == "none":
-        fetal = noAneuploidy(maternal, paternal)
-        
-    # Fill the rest of the plasma reads
-    g = copy.deepcopy(fetal)
-    # Maternal DNA
-    while(len(g) < READS):
-        g.append(tuple(m.readline()[0:-2].split(",")))
-    # Cleanup
-    #g = [tuple(l[0:-2].split(",")) for l in g]
-    print "Writing to output file " + type + "_" + parent
-    with open(OUTPUTPATH + type + "_" + parent, "w") as f:
-        for entry in g:
-            f.write(entry + "\n")
-            f.write("%s,%s,%s\n" % (entry[0], entry[1], entry[2]))
-    print "Done."
-    
-    '''
 
 
 if __name__ == "__main__":
