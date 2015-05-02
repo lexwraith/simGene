@@ -6,7 +6,10 @@
 from argparse import ArgumentParser
 import cProfile
 import copy
+from operator import itemgetter
 import random
+
+import matplotlib.pyplot as plt
 
 from numpy.random import normal as normdist
 
@@ -16,6 +19,7 @@ from config import *
 #Constants
 READS = 1000000
 LENCHR = 53000000
+BUCKET_SIZE = 10000
 COVERAGE = random.randint(1, 7)
 
 parser = ArgumentParser()
@@ -25,24 +29,34 @@ parser.add_argument("-t",
     choices=["none", "22q11del", "22q11dup", "22q13del", "complete", "longd"],
     default="none",
     help="Type of aneuploidy 22")
-parser.add_argument("-p",
-    metavar="Parent",
-    type=str,
-    choices=["p", "m"],
-    default="p",
-    help="Maternal or Paternal")
+parser.add_argument("-d", help="display read coverage in a graph")
+#parser.add_argument("-p",
+#    metavar="Parent",
+#    type=str,
+#    choices=["p", "m"],
+#    default="p",
+#    help="Maternal or Paternal")
 
 def loadGenomes():
-    one = open("%sreads/4-17-21-3-38" % OUTPUTPATH, "r")
-    two = open("%sreads/4-17-21-5-35" % OUTPUTPATH, "r")
+    one = open("%sreads/mother_filtered" % OUTPUTPATH, "r")
+    two = open("%sreads/child_filtered" % OUTPUTPATH, "r")
     return one,two
 
 '''
 Creates fetal data for 22q11 deletion.
 Final fetal data will include all of no_del, and all of to_del besides anything in 22q11
 '''
-def del22q11(to_del, no_del):
+def del22q11(to_del):
     print "Simulating deleted 22q11..."
+    
+    # Add in the reads not associated with 22q11, from 1st parent
+    z_normal = filter(lambda z: 'q11' not in z[2], to_del)
+    
+    z = []
+    z.extend(z_normal)
+    
+    
+    '''
     # Add in the reads not associated with 22q11, from 1st parent
     z = filter(lambda z: 'q11' not in z[2], to_del)
     y = []
@@ -53,6 +67,7 @@ def del22q11(to_del, no_del):
     # Add in all reads from the other parent
     for _ in range(COVERAGE):
         z.extend(no_del)
+    '''
         
     print "Done."
     return z
@@ -61,8 +76,18 @@ def del22q11(to_del, no_del):
 Creates fetal data for 22q11 duplication
 Final fetal data includes all of no_dup, all of to_dup, with everything in to_dup that is 22q11 twice
 '''
-def dup22q11(to_dup, no_dup):
+def dup22q11(to_dup):
     print "Simulating duplicated 22q11..."
+    
+    x = filter(lambda x: 'q11' in x[2], to_dup)
+    y = filter(lambda y: 'q11' not in x[2], to_dup)
+    
+    z = []
+    z.extend(x)
+    z.extend(x)
+    z.extend(y)
+    
+    '''
     # Get only reads on 22q11
     x = filter(lambda x: 'q11' in x[2], to_dup)
     y = []
@@ -82,12 +107,19 @@ def dup22q11(to_dup, no_dup):
     # Add in all reads from the other parent
     for _ in range(COVERAGE):
         z.extend(no_dup)
+    '''
         
     print "Done."
     return z
 
-def complete(to_dup, no_dup):
+def complete(to_dup):
     print "Simulating complete duplicate"
+    y = copy.deepcopy(to_dup)
+    z = []
+    z.extend(y)
+    z.extend(y)
+    
+    '''
     z = copy.deepcopy(to_dup)
     y = []
     # Duplicate the reads, take care of coverage, from 1st parent
@@ -99,11 +131,20 @@ def complete(to_dup, no_dup):
     for _ in range(COVERAGE):
         z.extend(no_dup)
         
+    '''
     print "Done."
     return z
 
-def del22q13(to_del, no_del):
+def del22q13(to_del):
     print "Simulating deleted 22q13..."
+    
+    z_normal = filter(lambda z: 'q11' not in z[2], to_del)
+    
+    z = []
+    z.extend(z_normal)
+    
+    
+    '''
     # Add in the reads not associated with 22q11, from 1st parent
     z = filter(lambda z: 'q13' not in z[2], to_del)
     y = []
@@ -115,31 +156,135 @@ def del22q13(to_del, no_del):
     for _ in range(COVERAGE):
         z.extend(no_del)
         
+    '''
     print "Done."
     return z
 
-def longd(to_del, no_del):
+def longd(to_del):
     print "Simulating complete deletion"
     z = []
+    '''
     # Add in all reads from the other parent
     for _ in range(COVERAGE):
         z.extend(no_del)
-    
+    '''
     print "Done."
     return z
 
-def noAneuploidy(maternal, paternal):
+def noAneuploidy(fetal):
     print "Simulating no aneuploidy..."
+    print "Done."
+    return fetal
+    '''
     z = copy.deepcopy(maternal)
     z.extend(paternal)
     y = []
     for _ in range(COVERAGE - 1):
         y.extend(z)
     z.extend(y)
+    
     print "Done."
     return z
+    '''
 
-def main(ff, type, parent):
+'''
+Given plasma data, creates an observed sequence. For each position, sees if the number of reads is greater or less than the expected amount
+Put into buckets of length 10,000 each
+'''
+def getSequence(data):
+    mother = open("%sreads/mother_filtered" % OUTPUTPATH, "r")
+    num_reads = len(mother.read())
+    expected_reads = num_reads*COVERAGE/CHR_LEN
+    low = expected_reads*0.8
+    high = expected_reads*1.2
+    coverage = {}
+    for read in data:
+        read_info = read.split(',')
+        pos = int(read_info[0])
+        read_len = len(read_info[1])
+        for i in range(read_len):
+            bucket = (pos + i)/BUCKET_SIZE
+            coverage[bucket] = coverage.get(bucket, 0) + 1
+    for key in coverage:
+        if coverage[key] < low:
+            coverage[key] = "L"
+        elif coverage[key] < high:
+            coverage[key] = "N"
+        else:
+            coverage[key] = "H"
+            
+    observed_seq = []
+    #go through each dictionary entry in order
+    for i in range(max(coverage.keys())):
+        observed_seq.append(coverage[i])
+    return observed_seq
+
+def displayCoverage(reads, type):
+    if type == "22q11del":
+        desc = "Deletion on 22q11"
+    elif type == "22q11dup":
+        desc = "Trisomy on 22q11"
+    elif type == "22q13del":
+        desc = "Deletion on 22q13"
+    elif type == "complete":
+        desc = "Complete trisomy"
+    elif type == "longd":
+        desc = "Complete deletion"
+    elif type == "none":
+        desc = "No aneuploidy"
+    
+    values = [int(l[0]) for l in reads]
+    
+    plt.hist(values, bins=CHR_LEN/BUCKET_SIZE)
+    plt.title(desc)
+    plt.xlabel("Read position")
+    plt.ylabel("Coverage")
+    plt.show()
+
+def main(ff, type, parent, display):
+    m,f = loadGenomes()
+    fetal = f.read()
+    fetal = [tuple(l[0:-2].split(",")) for l in fetal]
+    
+    # Generate the aneuploidy for the entire fetus
+    if type == "22q11del":
+        fetal = del22q11(fetal)
+    elif type == "22q11dup":
+        fetal = dup22q11(fetal)
+    elif type == "22q13del":
+        fetal = del22q13(fetal)
+    elif type == "complete":
+        fetal = complete(fetal)
+    elif type == "longd":
+        fetal = longd(fetal)
+    elif type == "none":
+        fetal = noAneuploidy(fetal)
+    
+    # Get the fetus samples that will show up in the plasma
+    fetal = random.sample(fetal, READS*ff)
+    
+    # Fill the rest of the plasma reads
+    g = copy.deepcopy(fetal)
+    # Maternal DNA
+    while(len(g) < READS):
+        g.append(tuple(m.readline()[0:-2].split(",")))
+    
+    #sort the data on read position
+    sorted(g, key=itemgetter(0))
+    
+    # Get an observation sequence
+    seq = getSequence(g)
+    
+    print "Writing to output file " + type + "_" + parent
+    with open(OUTPUTPATH + type + "_" + parent, "w") as f:
+        for entry in seq:
+            f.write(entry + "\n")
+    print "Done."
+    
+    if display:
+        displayCoverage(g, type)
+        
+    '''
     m,p = loadGenomes()
     maxp = int(sum(1 for line in p) - ff * READS)
     p.seek(random.randint(0,maxp))
@@ -154,7 +299,6 @@ def main(ff, type, parent):
     # Maternal DNA in fetus
     maternal = [m.readline() for _ in range(int(ff * READS)/2)]
     maternal = [tuple(l[0:-2].split(",")) for l in maternal]
-
 
     # Get reads for the fetus alone
     if type == "22q11del" and parent == "p":
@@ -179,6 +323,7 @@ def main(ff, type, parent):
         fetal = longd(maternal, paternal)
     elif type == "none":
         fetal = noAneuploidy(maternal, paternal)
+        
     # Fill the rest of the plasma reads
     g = copy.deepcopy(fetal)
     # Maternal DNA
@@ -192,11 +337,13 @@ def main(ff, type, parent):
             f.write(entry + "\n")
             f.write("%s,%s,%s\n" % (entry[0], entry[1], entry[2]))
     print "Done."
+    
+    '''
 
 
 if __name__ == "__main__":
     print "Coverage:", COVERAGE
     args = parser.parse_args()
-    main(normdist(FFMEAN,FFSTD)**2, args.t, args.p)
+    main(normdist(FFMEAN,FFSTD)**2, args.t, args.p, args.d)
     #cProfile.run('main(normdist(FFMEAN,FFSTD)**2 * 100)')
 

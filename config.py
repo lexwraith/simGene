@@ -5,6 +5,8 @@ REFPATH = "/home/ec2-user/data/cg/ref.fa"
 ALTPATH = "/home/ec2-user/data/cg/alt.fa"
 FFMEAN = .123
 FFSTD = .035
+READ_LEN = 33
+CHR_LEN = 51304566
 
 LOC = [
 (0,3800000,"p13","gvar"),
