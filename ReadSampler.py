@@ -154,8 +154,8 @@ def getSequence(data, ff):
     
     num_reads_p = len(data)*ff/2 # Paternal reads are 1/2 of the fetus'
     num_reads_m = len(data) - num_reads_p # Maternal reads are the rest
-    expected_coverage_p = num_reads_p * READ_LEN * BUCKET_SIZE / GEN_LEN
-    expected_coverage_m = num_reads_m * READ_LEN * BUCKET_SIZE / GEN_LEN
+    expected_coverage_p = num_reads_p * READ_LEN * BUCKET_SIZE / CHR_LEN
+    expected_coverage_m = num_reads_m * READ_LEN * BUCKET_SIZE / CHR_LEN
     
     # Generate two distributions, one for the father, and one for the mother
     low_p, high_p = poisson.interval(0.333, expected_coverage_p)
