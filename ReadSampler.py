@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 #Constants
 READS = 1000000
 LENCHR = 53000000
-BUCKET_SIZE = 100000
+BUCKET_SIZE = 100
 COVERAGE = random.randint(1, 7)
 
 parser = ArgumentParser()
@@ -287,7 +287,7 @@ def callReads(reads, m, p):
                 call = "-"
             called_read = read + (call,)
             called.append(called_read)
-            f.write("%s,%s,%s,%s" % (read[0], read[1], read[2], call))
+            f.write("%s,%s,%s,%s\n" % (read[0], read[1], read[2], call))
     print "Done."
     return called
 
@@ -303,7 +303,7 @@ def main(ff, type, parent, display, path):
     if not isfile("%sreads/child_called" % OUTPUTPATH):
         fb = callReads(fb, mb, pb)
     else:
-        fb = list(open("%sreads/child_filtered" % OUTPUTPATH, "r"))
+        fb = list(open("%sreads/child_called" % OUTPUTPATH, "r"))
         fb = [tuple(l[0:-2].split(",")) for l in fb]
 
     for j in range(10):
@@ -359,7 +359,7 @@ def main(ff, type, parent, display, path):
             o.write(finalseq)
         print "Done."
 
-        if display:
+        if display and j==0:
             displayCoverage(g, type, path)
 
 if __name__ == "__main__":
