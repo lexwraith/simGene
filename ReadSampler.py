@@ -258,6 +258,7 @@ def getDist(pos, seq, ref):
     return min(dist, dist2)
     
 def callReads(reads, m, p):
+    print "Calling child reads..."
     for read in reads:
         pos = read[0]
         seq = read[1]
@@ -270,11 +271,12 @@ def callReads(reads, m, p):
         else:
             call = "-"
         read = read + (call,)
-        
+    print "Done."
     return reads
 
 def main(ff, type, parent, display):
-    m,f, p = loadGenomes()
+    print "Beginning..."
+    m,f,p = loadGenomes()
     fetal = list(f)
     fetal = [tuple(l[0:-2].split(",")) for l in fetal]
     m = [tuple(l[0:-2].split(",")) for l in m]
@@ -323,7 +325,6 @@ def main(ff, type, parent, display):
 
 
 if __name__ == "__main__":
-    #print "Coverage:", COVERAGE
     args = parser.parse_args()
     main(normdist(FFMEAN,FFSTD)**2, args.t, args.p, args.d)
     #cProfile.run('main(normdist(FFMEAN,FFSTD)**2 * 100)')
