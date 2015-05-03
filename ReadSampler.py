@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 READS = 1000000
 LENCHR = 53000000
 BUCKET_SIZE = 100
+TYPE = ["none", "22q11del", "22q11dup", "22q13del", "complete", "longd"]
 COVERAGE = random.randint(1, 7)
 
 parser = ArgumentParser()
@@ -306,61 +307,65 @@ def main(ff, type, parent, display, path):
         fb = list(open("%sreads/child_called" % OUTPUTPATH, "r"))
         fb = [tuple(l[0:-2].split(",")) for l in fb]
 
-    for j in range(10):
-        fetal = fb[:]
-        maternal = mb[:]
-        paternal = pb[:]
-    
-        # Generate the aneuploidy for the entire fetus
-        if type == "22q11del":
-            fetal = del22q11(fetal, parent)
-        elif type == "22q11dup":
-            fetal = dup22q11(fetal, parent)
-        elif type == "22q13del":
-            fetal = del22q13(fetal, parent)
-        elif type == "complete":
-            fetal = complete(fetal, parent)
-        elif type == "longd":
-            fetal = longd(fetal, parent)
-        elif type == "none":
-            fetal = noAneuploidy(fetal)
-
-        # Get the fetus samples that will show up in the plasma
-        fetal = random.sample(fetal, int(READS*ff))
-
-        # Fill the rest of the plasma reads
-        g = copy.deepcopy(fetal)
-
-        # Maternal DNA
-        sample_size = READS - len(g)
-        maternal_sample = random.sample(maternal, sample_size)
-        g.extend(maternal_sample)
-
-    #while(len(g) < READS):
-    #    g.append(tuple(m.readline()[0:-2].split(",")) + ("m",))
-
-        #sort the data on read position
-        sorted(g, key=itemgetter(0))
-
-        # Get an observation sequence
-        seq = getSequence(g, ff)
-
-        print "Writing to output file " + path + parent + str(j)
-        labels = {  
-            "LL" : 1, "LN" : 2, "LH" : 3, 
-            "NL" : 4, "NN" : 5, "NH" : 6,
-            "HL" : 7, "HN" : 8, "HH" : 9
-            }
-        finalseq = ["".join([e[0],e[1]]) for e in seq]
-        finalseq = [str(labels[i]) for i in finalseq]
-        finalseq = "".join(finalseq)
-
-        with open(OUTPUTPATH + path + parent + str(j), "w") as o:
-            o.write(finalseq)
-        print "Done."
-
-        if display and j==0:
-            displayCoverage(g, type, path)
+    for type in TYPE:
+        for parent in ["p", "m"]:
+            if parent == "m" and type == "none":
+                continue
+            for j in range(50):
+                fetal = fb[:]
+                maternal = mb[:]
+                paternal = pb[:]
+            
+                # Generate the aneuploidy for the entire fetus
+                if type == "22q11del":
+                    fetal = del22q11(fetal, parent)
+                elif type == "22q11dup":
+                    fetal = dup22q11(fetal, parent)
+                elif type == "22q13del":
+                    fetal = del22q13(fetal, parent)
+                elif type == "complete":
+                    fetal = complete(fetal, parent)
+                elif type == "longd":
+                    fetal = longd(fetal, parent)
+                elif type == "none":
+                    fetal = noAneuploidy(fetal)
+        
+                # Get the fetus samples that will show up in the plasma
+                fetal = random.sample(fetal, int(READS*ff))
+        
+                # Fill the rest of the plasma reads
+                g = copy.deepcopy(fetal)
+        
+                # Maternal DNA
+                sample_size = READS - len(g)
+                maternal_sample = random.sample(maternal, sample_size)
+                g.extend(maternal_sample)
+        
+            #while(len(g) < READS):
+            #    g.append(tuple(m.readline()[0:-2].split(",")) + ("m",))
+        
+                #sort the data on read position
+                sorted(g, key=itemgetter(0))
+        
+                # Get an observation sequence
+                seq = getSequence(g, ff)
+        
+                print "Writing to output file " + path + parent + str(j)
+                labels = {  
+                    "LL" : 1, "LN" : 2, "LH" : 3, 
+                    "NL" : 4, "NN" : 5, "NH" : 6,
+                    "HL" : 7, "HN" : 8, "HH" : 9
+                    }
+                finalseq = ["".join([e[0],e[1]]) for e in seq]
+                finalseq = [str(labels[i]) for i in finalseq]
+                finalseq = "".join(finalseq)
+        
+                with open(OUTPUTPATH + type + parent + str(j), "w") as o:
+                    o.write(finalseq)
+                print "Done."
+        
+                if display and j==0:
+                    displayCoverage(g, type, path)
 
 if __name__ == "__main__":
     args = parser.parse_args()
