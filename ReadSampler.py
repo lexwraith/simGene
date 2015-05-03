@@ -155,8 +155,8 @@ def getSequence(data, ff):
     low_m, high_m = poisson.interval(0.333, expected_coverage_m)
     
     # Count the number of times a read comes from m or p in each bucket
-    coverage_p = defaultdict(0)
-    coverage_m = defaultdict(0)
+    coverage_p = defaultdict(lambda: 0)
+    coverage_m = defaultdict(lambda: 0)
     for read in data:
         pos = int(read[0])
         read_len = len(read[1])
@@ -242,8 +242,11 @@ def getDist(pos, seq, ref):
             # Match found - Compare the sequences
             dist = hammingDist(ref[mid][1], seq)
             break
+    
     # A direct positional match has not been found
     if low > high:
+        dist = float("inf")
+        dist2 = float("inf")
         ref_seq = ref[mid][1]        
         diff = pos - int(ref[mid][0])
         if diff <= len(seq):
@@ -255,10 +258,13 @@ def getDist(pos, seq, ref):
             seq_cpy = seq[diff:]
             ref_cpy = ref_seq[:diff]
             dist2 = hammingDist(seq_cpy, ref_cpy)
-    return min(dist, dist2)
-    
+        return min(dist, dist2)
+    else:
+        return dist
+
 def callReads(reads, m, p):
     print "Calling child reads..."
+    called = []
     for read in reads:
         pos = read[0]
         seq = read[1]
@@ -270,9 +276,10 @@ def callReads(reads, m, p):
             call = "m"
         else:
             call = "-"
-        read = read + (call,)
+        called_read = read + (call,)
+        called.append(called_read)
     print "Done."
-    return reads
+    return called
 
 def main(ff, type, parent, display):
     m,f,p = loadGenomes()
@@ -284,7 +291,7 @@ def main(ff, type, parent, display):
     paternal = [tuple(l[0:-2].split(",")) + ("p",) for l in paternal]
     
     fetal = callReads(fetal, maternal, paternal)
-    
+
     # Generate the aneuploidy for the entire fetus
     if type == "22q11del":
         fetal = del22q11(fetal, parent)
