@@ -275,12 +275,13 @@ def callReads(reads, m, p):
     return reads
 
 def main(ff, type, parent, display):
-    print "Beginning..."
     m,f,p = loadGenomes()
     fetal = list(f)
     fetal = [tuple(l[0:-2].split(",")) for l in fetal]
-    m = [tuple(l[0:-2].split(",")) for l in m]
-    p = [tuple(l[0:-2].split(",")) for l in p]
+    m = list(m)
+    p = list(p)
+    m = [tuple(l[0:-2].split(",")) + ("m",) for l in m]
+    p = [tuple(l[0:-2].split(",")) + ("p",) for l in p]
     
     fetal = callReads(fetal, m, p)
     
@@ -303,10 +304,14 @@ def main(ff, type, parent, display):
     
     # Fill the rest of the plasma reads
     g = copy.deepcopy(fetal)
-    # Maternal DNA
     
-    while(len(g) < READS):
-        g.append(tuple(m.readline()[0:-2].split(",")) + ("m",))
+    # Maternal DNA
+    sample_size = READS - len(g)
+    maternal_sample = random.sample(m, sample_size)
+    g.extend(maternal_sample)
+    
+    #while(len(g) < READS):
+    #    g.append(tuple(m.readline()[0:-2].split(",")) + ("m",))
     
     #sort the data on read position
     sorted(g, key=itemgetter(0))
