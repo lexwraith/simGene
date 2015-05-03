@@ -273,7 +273,7 @@ def getDist(pos, seq, ref):
 def callReads(reads, m, p):
     print "Calling child reads..."
     called = []
-    with open("%sreads/child_filtered" % OUTPUTPATH, "w") as f:
+    with open("%sreads/child_called" % OUTPUTPATH, "w") as f:
         for read in reads:
             pos = read[0]
             seq = read[1]
