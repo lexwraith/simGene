@@ -24,19 +24,26 @@ BUCKET_SIZE = 1000
 COVERAGE = random.randint(1, 7)
 
 parser = ArgumentParser()
+
 parser.add_argument("-t",
     metavar="Type",
     type=str,
     choices=["none", "22q11del", "22q11dup", "22q13del", "complete", "longd"],
     default="none",
     help="Type of aneuploidy 22")
-parser.add_argument("-d", help="display read coverage in a graph", action='store_true')
+
+parser.add_argument("-d", 
+        help="display read coverage in a graph", action='store_true')
+
 parser.add_argument("-p",
     metavar="Parent",
     type=str,
     choices=["p", "m"],
     default="p",
     help="Maternal or Paternal")
+parser.add_argument("OUTPUT",
+        type=str,
+        help="Output path")
 
 def loadGenomes():
     one = open("%sreads/mother_filtered" % OUTPUTPATH, "r")
@@ -281,7 +288,7 @@ def callReads(reads, m, p):
     print "Done."
     return called
 
-def main(ff, type, parent, display):
+def main(ff, type, parent, display, path):
     m,f,p = loadGenomes()
     fetal = list(f)
     fetal = [tuple(l[0:-2].split(",")) for l in fetal]
@@ -326,8 +333,8 @@ def main(ff, type, parent, display):
     # Get an observation sequence
     seq = getSequence(g, ff)
     
-    print "Writing to output file " + type + "_" + parent
-    with open(OUTPUTPATH + type + "_" + parent, "w") as f:
+    print "Writing to output file " + path + parent
+    with open(OUTPUTPATH + path + parent, "w") as f:
         for entry in seq:
             f.write("%s,%s\n" % (entry[0], entry[1]))
     print "Done."
@@ -338,6 +345,6 @@ def main(ff, type, parent, display):
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    main(normdist(FFMEAN,FFSTD)**2, args.t, args.p, args.d)
+    main(normdist(FFMEAN,FFSTD)**2, args.t, args.p, args.d, args.OUTPUT)
     #cProfile.run('main(normdist(FFMEAN,FFSTD)**2 * 100)')
 
