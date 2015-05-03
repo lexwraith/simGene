@@ -3,18 +3,19 @@
 # Presumptions: sqrt(ff) ~ norm(.123,.035)
 # sqrt(ff)**2 * 100 = ff
 
+from _collections import defaultdict
 from argparse import ArgumentParser
 import cProfile
 import copy
 from operator import itemgetter
+from os.path import isfile
 import random
 
-import matplotlib.pyplot as plt
 from numpy.random import normal as normdist
 from scipy.stats import poisson
 
 from config import *
-from _collections import defaultdict
+import matplotlib.pyplot as plt
 
 
 #Constants
@@ -272,19 +273,21 @@ def getDist(pos, seq, ref):
 def callReads(reads, m, p):
     print "Calling child reads..."
     called = []
-    for read in reads:
-        pos = read[0]
-        seq = read[1]
-        dist_m = getDist(pos, seq, m)
-        dist_p = getDist(pos, seq, p)
-        if dist_m > dist_p:
-            call = "p"
-        elif dist_p > dist_m:
-            call = "m"
-        else:
-            call = "-"
-        called_read = read + (call,)
-        called.append(called_read)
+    with open("%sreads/child_filtered" % OUTPUTPATH, "w") as f:
+        for read in reads:
+            pos = read[0]
+            seq = read[1]
+            dist_m = getDist(pos, seq, m)
+            dist_p = getDist(pos, seq, p)
+            if dist_m > dist_p:
+                call = "p"
+            elif dist_p > dist_m:
+                call = "m"
+            else:
+                call = "-"
+            called_read = read + (call,)
+            called.append(called_read)
+            f.write("%s,%s,%s,%s" % (read[0], read[1], read[2], call))
     print "Done."
     return called
 
@@ -296,13 +299,17 @@ def main(ff, type, parent, display, path):
     fb = [tuple(l[0:-2].split(",")) for l in fb]
     mb = [tuple(l[0:-2].split(",")) + ("m",) for l in mb]
     pb = [tuple(l[0:-2].split(",")) + ("p",) for l in pb]
+    
+    if not isfile("%sreads/child_called" % OUTPUTPATH):
+        fb = callReads(fb, mb, pb)
+    else:
+        fb = list(open("%sreads/child_filtered" % OUTPUTPATH, "r"))
+        fb = [tuple(l[0:-2].split(",")) for l in fb]
 
     for j in range(10):
         fetal = fb[:]
         maternal = mb[:]
         paternal = pb[:]
-
-        fetal = callReads(fetal, maternal, paternal)
     
         # Generate the aneuploidy for the entire fetus
         if type == "22q11del":
