@@ -39,9 +39,9 @@ parser.add_argument("-p",
     help="Maternal or Paternal")
 
 def loadGenomes():
-    one = open("%sreads/mother" % OUTPUTPATH, "r")
-    two = open("%sreads/child" % OUTPUTPATH, "r")
-    three = open("%sreads/father" % OUTPUTPATH, "r")
+    one = open("%sreads/mother_filtered" % OUTPUTPATH, "r")
+    two = open("%sreads/child_filtered" % OUTPUTPATH, "r")
+    three = open("%sreads/father_filtered" % OUTPUTPATH, "r")
     return one,two, three
 
 '''
@@ -278,12 +278,12 @@ def main(ff, type, parent, display):
     m,f,p = loadGenomes()
     fetal = list(f)
     fetal = [tuple(l[0:-2].split(",")) for l in fetal]
-    m = list(m)
-    p = list(p)
-    m = [tuple(l[0:-2].split(",")) + ("m",) for l in m]
-    p = [tuple(l[0:-2].split(",")) + ("p",) for l in p]
+    maternal = list(m)
+    paternal = list(p)
+    maternal = [tuple(l[0:-2].split(",")) + ("m",) for l in maternal]
+    paternal = [tuple(l[0:-2].split(",")) + ("p",) for l in paternal]
     
-    fetal = callReads(fetal, m, p)
+    fetal = callReads(fetal, maternal, paternal)
     
     # Generate the aneuploidy for the entire fetus
     if type == "22q11del":
@@ -307,7 +307,7 @@ def main(ff, type, parent, display):
     
     # Maternal DNA
     sample_size = READS - len(g)
-    maternal_sample = random.sample(m, sample_size)
+    maternal_sample = random.sample(maternal, sample_size)
     g.extend(maternal_sample)
     
     #while(len(g) < READS):
