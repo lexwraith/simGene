@@ -171,7 +171,10 @@ def getSequence(data, ff):
         read_len = len(read[1])
         for i in range(read_len):
             bucket = (pos + i)/BUCKET_SIZE
-            if read[3] == "p":
+            if read[3] == "-":
+                coverage_p[bucket] += 1
+                coverage_m[bucket] += 1
+            elif read[3] == "p":
                 coverage_p[bucket] += 1
             else:
                 coverage_m[bucket] += 1
@@ -179,6 +182,24 @@ def getSequence(data, ff):
     # Decide if the number of reads represents a low, normal, or high distribution     
     coverage = {}
     for key in coverage_p:
+        if coverage_p[key] < low_p:
+            p_val = "L"
+        elif coverage_p[key] < high_p:
+            p_val = "N"
+        else:
+            p_val = "H"
+        if coverage_m[key] < low_m:
+            m_val = "L"
+        elif coverage_m[key] < high_m:
+            m_val = "N"
+        else:
+            m_val = "H"
+        val = (p_val, m_val)
+        coverage[key] = val
+    
+    for key in coverage_m:
+        if key in coverage_p.keys():
+            continue
         if coverage_p[key] < low_p:
             p_val = "L"
         elif coverage_p[key] < high_p:
@@ -300,18 +321,18 @@ def main(ff, type, parent, display, path):
     fb = [tuple(l[0:-2].split(",")) for l in fb]
     mb = [tuple(l[0:-2].split(",")) + ("m",) for l in mb]
     pb = [tuple(l[0:-2].split(",")) + ("p",) for l in pb]
-    
+
     if not isfile("%sreads/child_called" % OUTPUTPATH):
         fb = callReads(fb, mb, pb)
     else:
         fb = list(open("%sreads/child_called" % OUTPUTPATH, "r"))
-        fb = [tuple(l[0:-2].split(",")) for l in fb]
+        fb = [tuple(l[0:-1].split(",")) for l in fb]
 
     for type in TYPE:
         for parent in ["p", "m"]:
             if parent == "m" and type == "none":
                 continue
-            for j in range(50):
+            for j in range(5):
                 fetal = fb[:]
                 maternal = mb[:]
                 paternal = pb[:]
@@ -332,7 +353,8 @@ def main(ff, type, parent, display, path):
         
                 # Get the fetus samples that will show up in the plasma
                 fetal = random.sample(fetal, int(READS*ff))
-        
+                print "Len fetal:", str(len(fetal))
+                
                 # Fill the rest of the plasma reads
                 g = copy.deepcopy(fetal)
         
@@ -360,7 +382,7 @@ def main(ff, type, parent, display, path):
                 finalseq = [str(labels[i]) for i in finalseq]
                 finalseq = "".join(finalseq)
         
-                with open(OUTPUTPATH + type + parent + str(j), "w") as o:
+                with open("~/data/cg/output/reads_new/" + type + parent + str(j), "w") as o:
                     o.write(finalseq)
                 print "Done."
         
