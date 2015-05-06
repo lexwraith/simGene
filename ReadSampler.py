@@ -181,25 +181,9 @@ def getSequence(data, ff):
 
     # Decide if the number of reads represents a low, normal, or high distribution     
     coverage = {}
-    for key in coverage_p:
-        if coverage_p[key] < low_p:
-            p_val = "L"
-        elif coverage_p[key] < high_p:
-            p_val = "N"
-        else:
-            p_val = "H"
-        if coverage_m[key] < low_m:
-            m_val = "L"
-        elif coverage_m[key] < high_m:
-            m_val = "N"
-        else:
-            m_val = "H"
-        val = (p_val, m_val)
-        coverage[key] = val
+    keys = coverage_p.keys() + list(set(coverage_m.keys()) - set(coverage_p.keys()))
     
-    for key in coverage_m:
-        if key in coverage_p.keys():
-            continue
+    for key in keys:
         if coverage_p[key] < low_p:
             p_val = "L"
         elif coverage_p[key] < high_p:
