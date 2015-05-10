@@ -47,12 +47,20 @@ HG00691: ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/phase3/data/HG00691/cg_dat
 In this example, we will assume that the downloaded .bam fiels are HG00689.bam, HG00690.bam, and HG00691.bam. 
 
 samtools view -h -o father.sam HG00689.bam
+
+
 python ReadFilter.py father.sam father father_filtered
+
 samtools view -h -o mother.sam HG00690.bam
+
 python ReadFilter.py mother.sam mother mother_filtered
+
 samtools view -h -o child.sam HG00691.bam
+
 python ReadFilter.py child.sam child child_filtered
+
 python ReadSampler.py 22q11del_output -t 22q11del -p m
+
 python Analysis.py
 
 
