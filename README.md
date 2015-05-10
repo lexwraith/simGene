@@ -93,3 +93,6 @@ This module reads all generated observed sequences in the output directory, and 
 
 ##Config.py
 This module contains all important magic numbers and file paths. For example, it defines where to programs should look for reads and write output (OUTPUTPATH). 
+
+##Credit/hmm.py
+The HMM module used was provided by Prof. Chuck Anderson of Colorado State University. It was received from his publicly-available site listed above. All credit belongs to him. 
