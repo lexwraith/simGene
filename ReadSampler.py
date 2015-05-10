@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 #Constants
 READS = 1000000
 LENCHR = 53000000
-BUCKET_SIZE = 100
+BUCKET_SIZE = 10000
 TYPE = ["none", "22q11del", "22q11dup", "22q13del", "complete", "longd"]
 COVERAGE = random.randint(1, 7)
 
@@ -183,7 +183,7 @@ def getSequence(data, ff):
     coverage = {}
     keys = coverage_p.keys() + list(set(coverage_m.keys()) - set(coverage_p.keys()))
     
-    for key in keys:
+    for key in range(CHR_LEN/BUCKET_SIZE + 1):
         if coverage_p[key] < low_p:
             p_val = "L"
         elif coverage_p[key] < high_p:
@@ -228,7 +228,7 @@ def displayCoverage(reads, type, path):
     plt.title(desc)
     plt.xlabel("Read position")
     plt.ylabel("Coverage")
-    plt.savefig(OUTPUTPATH + path + type + ".png")
+    plt.savefig(OUTPUTPATH + "images/" + path + ".png")
 
 def hammingDist(seq1, seq2):
     seq1_len = len(seq1)
@@ -312,66 +312,58 @@ def main(ff, type, parent, display, path):
         fb = list(open("%sreads/child_called" % OUTPUTPATH, "r"))
         fb = [tuple(l[0:-1].split(",")) for l in fb]
 
-    for type in TYPE:
-        for parent in ["p", "m"]:
-            if parent == "m" and type == "none":
-                continue
-            for j in range(5):
-                fetal = fb[:]
-                maternal = mb[:]
-                paternal = pb[:]
+    fetal = fb[:]
+    maternal = mb[:]
+    paternal = pb[:]
             
-                # Generate the aneuploidy for the entire fetus
-                if type == "22q11del":
-                    fetal = del22q11(fetal, parent)
-                elif type == "22q11dup":
-                    fetal = dup22q11(fetal, parent)
-                elif type == "22q13del":
-                    fetal = del22q13(fetal, parent)
-                elif type == "complete":
-                    fetal = complete(fetal, parent)
-                elif type == "longd":
-                    fetal = longd(fetal, parent)
-                elif type == "none":
-                    fetal = noAneuploidy(fetal)
+    # Generate the aneuploidy for the entire fetus
+    if type == "22q11del":
+        fetal = del22q11(fetal, parent)
+    elif type == "22q11dup":
+        fetal = dup22q11(fetal, parent)
+    elif type == "22q13del":
+        fetal = del22q13(fetal, parent)
+    elif type == "complete":
+        fetal = complete(fetal, parent)
+    elif type == "longd":
+        fetal = longd(fetal, parent)
+    elif type == "none":
+        fetal = noAneuploidy(fetal)
         
-                # Get the fetus samples that will show up in the plasma
-                fetal = random.sample(fetal, int(READS*ff))
-                print "Len fetal:", str(len(fetal))
+    # Get the fetus samples that will show up in the plasma
+    fetal = random.sample(fetal, int(READS*ff))
+    print "Len fetal:", str(len(fetal))
                 
-                # Fill the rest of the plasma reads
-                g = copy.deepcopy(fetal)
+    # Fill the rest of the plasma reads
+    g = copy.deepcopy(fetal)
         
-                # Maternal DNA
-                sample_size = READS - len(g)
-                maternal_sample = random.sample(maternal, sample_size)
-                g.extend(maternal_sample)
+    # Maternal DNA
+    sample_size = READS - len(g)
+    maternal_sample = random.sample(maternal, sample_size)
+    g.extend(maternal_sample)
+             
+    # Sort the data on read position
+    sorted(g, key=itemgetter(0))
         
-            #while(len(g) < READS):
-            #    g.append(tuple(m.readline()[0:-2].split(",")) + ("m",))
+    # Get an observation sequence
+    seq = getSequence(g, ff)
+    
+    print "Writing to output file " + path
+    labels = {  
+        "LL" : 1, "LN" : 2, "LH" : 3, 
+        "NL" : 4, "NN" : 5, "NH" : 6,
+        "HL" : 7, "HN" : 8, "HH" : 9
+        }
+    finalseq = ["".join([e[0],e[1]]) for e in seq]
+    finalseq = [str(labels[i]) for i in finalseq]
+    finalseq = "".join(finalseq)
+    
+    with open("%s%s" % (OUTPUTPATH, path), "w") as o:
+        o.write(finalseq)
+    print "Done."
         
-                #sort the data on read position
-                sorted(g, key=itemgetter(0))
-        
-                # Get an observation sequence
-                seq = getSequence(g, ff)
-        
-                print "Writing to output file " + path + parent + str(j)
-                labels = {  
-                    "LL" : 1, "LN" : 2, "LH" : 3, 
-                    "NL" : 4, "NN" : 5, "NH" : 6,
-                    "HL" : 7, "HN" : 8, "HH" : 9
-                    }
-                finalseq = ["".join([e[0],e[1]]) for e in seq]
-                finalseq = [str(labels[i]) for i in finalseq]
-                finalseq = "".join(finalseq)
-        
-                with open("~/data/cg/output/reads_new/" + type + parent + str(j), "w") as o:
-                    o.write(finalseq)
-                print "Done."
-        
-                if display and j==0:
-                    displayCoverage(g, type, path)
+    if display:
+        displayCoverage(g, type, path)
 
 if __name__ == "__main__":
     args = parser.parse_args()

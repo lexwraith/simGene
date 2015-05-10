@@ -25,7 +25,7 @@ def trainHMM(hmm, filepaths):
         with open(OUTPUTPATH + elem) as f:
             obs_l.append(f.readline())
 
-    return baum_welch(hmm, obs_l, epochs = 2, updatePi = True, verbose = True)
+    return baum_welch(hmm, obs_l, epochs = 1, updatePi = True, normUpdate = True, verbose = True)
 
 if __name__ == "__main__":
     numpy.set_printoptions(precision=2)
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     complete_m = genPaths('complete')
     complete_p = genPaths('complete', 'p')
     none = genPaths('none', 'p')
-    
+
 
     ALL = list(itertools.chain(del_11_m, del_11_p, del_13_m, del_13_p, dup_11_m, dup_11_p, longd_m, longd_p, complete_m, complete_p, none))
 
@@ -65,8 +65,7 @@ if __name__ == "__main__":
 
     del13p = HMM(2, A=A, B=B, V=V, Pi=Pi)
     trainHMM(del13p, del_13_p)
-    
-    """
+
     completem = HMM(2, A=A, B=B, V=V, Pi=Pi)
     trainHMM(completem, complete_m)
 
@@ -78,8 +77,7 @@ if __name__ == "__main__":
 
     longdp = HMM(2, A=A, B=B, V=V, Pi=Pi)
     trainHMM(longdp, longd_p)
-    """
-    
+
     dup11m = HMM(2, A=A, B=B, V=V, Pi=Pi)
     trainHMM(dup11m, dup_11_m)
 
@@ -88,11 +86,22 @@ if __name__ == "__main__":
 
     standard = HMM(2, A=A, B=B, V=V, Pi=Pi)
     trainHMM(standard, none)
+    print("Training done.")
 
-    data = [del_11_m, del_11_p, del_13_m, del_13_p, dup_11_m, dup_11_p] 
-    names = ['DEL-11-m', 'DEL-11-p', 'DEL-13-m', 'DEL-13-p', 'DUP-11-m', 'DUP-11-p']
-    hmms = [del11m, del11p, del13m, del13p, dup11m, dup11p]
-    colnames = ",".join(['DEL-11-m', 'DEL-11-p', 'DEL-13-m', 'DEL-13-p', 'DUP-11-m', 'DUP-11-p'])
+    data = [del_11_m, del_11_p, del_13_m, 
+            del_13_p, dup_11_m, dup_11_p,
+            longd_m, longd_p, complete_m, complete_p]
+
+    names = ['DEL-11-m', 'DEL-11-p', 'DEL-13-m', 
+            'DEL-13-p', 'DUP-11-m', 'DUP-11-p',
+            'longdm', 'longdp', 'completem', 'completep']
+
+    hmms = [del11m, del11p, del13m, 
+            del13p, dup11m, dup11p,
+            longdm, longdp, completem, completep]
+
+    colnames = ",".join(names)
+
     colnames = "," + colnames + "\n"
     print(colnames)
     with open("heatmap.csv", 'w+') as f:    
