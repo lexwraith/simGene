@@ -2,13 +2,21 @@
 A project for a Computational Biology class; Simulates and detects different types of aneuploidy on Chromosome 22 using an HMM and copy number variation.
 
 General workflow is as follows:
+
 1. Convert BAM to SAM files - one for each of the mother, father, and child
+
 2. From each SAM file, filter to only include sequence, location, and chromosome location (i.e. q11)
+
 3. Call the child's reads to either the father or mother
+
 4. Simulate a specific type of aneuploidy using the child's called reads
+
 5. Mix a fetal fraction of this data and the mother's to simulate maternal plasma
+
 6. Generate an observed sequence, based on position, and the number of reads called to the mother/father, using buckets.
+
 7. Train each HMM on its appropriate data
+
 8. Run each test data on all HMMs, and accept that with highest probability
 
 ##Requirements
