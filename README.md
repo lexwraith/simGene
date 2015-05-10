@@ -22,6 +22,16 @@ General workflow is as follows:
 ##Requirements
 This project was developed on a high-capacity server with a 1TB SSD and 60GB of RAM. The SSD helped speed up computation, and while all 1TB was not needed, a large amount of disk space in general is. The .bam files are each ~9GB, and the associated .sam files are ~50GB. Enough space is needed to store three of these temporarily, before filtering. 
 The large amount of RAM is more of a necessity for the project's successful running. Because we had the resources, we tended to just load the entire files into memory where possible. A machine with significantly less memory may not be able to run this successfully. 
+A number of installation requirements are needed. The project runs assuming Python2.7. Also needed to be installed are:
+1.  Samtools
+
+2.  Numpy
+
+3.  SciPy
+
+4.  Matplotlib
+
+5.  HMM from Colorado State (available here: http://www.cs.colostate.edu/~anderson/cs440/index.html/doku.php?id=notes:hmm2)
 
 ##ReadFilter.py
 Usage: python ReadFilter.py <input_file> <output_file> <filtered_output>
