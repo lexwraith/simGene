@@ -34,6 +34,28 @@ A number of installation requirements are needed. The project runs assuming Pyth
 
 5.  HMM from Colorado State (available here: http://www.cs.colostate.edu/~anderson/cs440/index.html/doku.php?id=notes:hmm2)
 
+##Data
+Original data is gotten from the publicly available 1000 genomes project. Three datasets are used: HG00689 (Father), HG00690 (Mother), and HG00691 (Child). These are available for download from the following paths (note: each file is ~9GB). 
+
+HG00689: ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/phase3/data/HG00689/cg_data/HG00689_lcl_SRR822306.mapped.COMPLETE_GENOMICS.CGworkflow2_2_evidenceSupport.CHS.high_coverage.20130501.bam
+
+HG00690: ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/phase3/data/HG00690/cg_data/HG00690_lcl_SRR822311.mapped.COMPLETE_GENOMICS.CGworkflow2_2_evidenceSupport.CHS.high_coverage.20130401.bam
+
+HG00691: ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/phase3/data/HG00691/cg_data/HG00691_lcl_SRR826849.mapped.COMPLETE_GENOMICS.CGworkflow2_2_evidenceSupport.CHS.high_coverage.20130401.bam
+
+##Full Working Example
+In this example, we will assume that the downloaded .bam fiels are HG00689.bam, HG00690.bam, and HG00691.bam. 
+
+samtools view -h -o father.sam HG00689.bam
+python ReadFilter.py father.sam father father_filtered
+samtools view -h -o mother.sam HG00690.bam
+python ReadFilter.py mother.sam mother mother_filtered
+samtools view -h -o child.sam HG00691.bam
+python ReadFilter.py child.sam child child_filtered
+python ReadSampler.py 22q11del_output -t 22q11del -p m
+python Analysis.py
+
+
 ##ReadFilter.py
 Usage: python ReadFilter.py <input_file> <output_file> <filtered_output>
 Given an input .sam file, this module filters it to only include read, sequence, and location information per read mapped to Chromosome 22. This module goes through input_file line by line, filtering anything not needed. There are two output files, output_file and filtered_output. output_file contains reads from all chromosomes, while filtered_output contains only reads for chromosome 22. output_file is kept only as a precaution. 
