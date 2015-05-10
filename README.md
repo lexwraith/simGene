@@ -45,10 +45,13 @@ HG00690: ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/phase3/data/HG00690/cg_dat
 HG00691: ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/phase3/data/HG00691/cg_data/HG00691_lcl_SRR826849.mapped.COMPLETE_GENOMICS.CGworkflow2_2_evidenceSupport.CHS.high_coverage.20130401.bam
 
 ##Full Working Example
-In this example, we will assume that the downloaded .bam fiels are HG00689.bam, HG00690.bam, and HG00691.bam. 
+Because of the very specific nature of our project, and the fact that it relies on dealing with big data, it does not make sense to run it on small sample inputs of data, so they have not been included.
+
+What we have included is three files - child_filtered, father_filtered, and mother_filtered. These are a very small sample of the output of ReadFilter.py, and may be used to run ReadSampler. Additionally, we have included two sample output files. 22q11dupm0 is a sample observed sequence, generated for trisomy on 22q11 on the maternal side. We have also included heatmap.csv, the output of the entire project. 
+
+Now, we will describe how to run the program on full data. In this example, we will assume that the downloaded .bam fiels are HG00689.bam, HG00690.bam, and HG00691.bam. 
 
 samtools view -h -o father.sam HG00689.bam
-
 
 python ReadFilter.py father.sam father father_filtered
 
@@ -86,4 +89,7 @@ In order for correct connection with Analysis.py the output filename should refl
 ##Analysis.py
 Usage: python Analysis.py
 
-This module reads all generated observed sequences in the output directory, and uses them to train a set of 11 HMMs using Baum-Welch. THe model to train is determined using filenames, so it is important to adhere to file naming conventions (i.e. 22q11dupm5). Each HMM has two states - aneuploidy or not. The module then outputs in a csv file the probabilities of each observed sequence coming from each HMM in an aneuploidy state, using the forward algorithm. 
+This module reads all generated observed sequences in the output directory, and uses them to train a set of 11 HMMs using Baum-Welch. THe model to train is determined using filenames, so it is important to adhere to file naming conventions (i.e. 22q11dupm5). Each HMM has two states - aneuploidy or not. The module then outputs in a csv file the probabilities of each observed sequence coming from each HMM in an aneuploidy state, using the forward algorithm. The output of the program is heatmap.csv, written in the directory Analysis.py is run from.
+
+##Config.py
+This module contains all important magic numbers and file paths. For example, it defines where to programs should look for reads and write output (OUTPUTPATH). 
